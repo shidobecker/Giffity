@@ -1,5 +1,6 @@
 package com.shido.giffity.ui.compose
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,8 +38,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.shido.giffity.R
 
 @Composable
-fun BackgroundAsset(
+fun BackgroundAssetImage(
     backgroundAssetUri: Uri,
+    capturedBitmap: Bitmap?,
     updateCapturingViewBounds: (Rect) -> Unit,
     startBitmapCaptureJob: () -> Unit,
     launchImagePicker: () -> Unit
@@ -76,7 +78,7 @@ fun BackgroundAsset(
         val configuration = LocalConfiguration.current
         val assetContainerHeight = remember { (configuration.screenHeightDp * 0.6).toInt() }
 
-        RenderBackground(modifier = Modifier
+        RenderBackgroundImage(modifier = Modifier
             .constrainAs(assetContainer) {
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
@@ -84,6 +86,7 @@ fun BackgroundAsset(
             }
             .zIndex(1f),
             updateCapturingViewBounds = updateCapturingViewBounds,
+            capturedBitmap = capturedBitmap,
             backgroundAssetUri = backgroundAssetUri,
             assetContainerHeightDp = assetContainerHeight)
 
@@ -109,13 +112,18 @@ fun BackgroundAsset(
 }
 
 @Composable
-fun RenderBackground(
+fun RenderBackgroundImage(
     modifier: Modifier, backgroundAssetUri: Uri,
+    capturedBitmap: Bitmap?,
     updateCapturingViewBounds: (Rect) -> Unit,
     assetContainerHeightDp: Int
 ) {
     Box(modifier = modifier.wrapContentSize()) {
-        val backgroundAsset = rememberAsyncImagePainter(model = backgroundAssetUri)
+        val backgroundAsset = if (capturedBitmap != null) {
+            rememberAsyncImagePainter(model = capturedBitmap)
+        } else {
+            rememberAsyncImagePainter(model = backgroundAssetUri)
+        }
 
         Image(
             modifier = Modifier
@@ -127,12 +135,12 @@ fun RenderBackground(
             contentDescription = ""
         )
 
-        RenderAsset(assetContainerHeightDp = assetContainerHeightDp)
+        RenderAssetImage(assetContainerHeightDp = assetContainerHeightDp)
     }
 }
 
 @Composable
-fun RenderAsset(assetContainerHeightDp: Int) {
+fun RenderAssetImage(assetContainerHeightDp: Int) {
     var offset by remember { mutableStateOf(Offset.Zero) }
     var zoom by remember { mutableStateOf(1f) }
     var angle by remember { mutableStateOf(0f) }
@@ -182,12 +190,4 @@ fun RenderAsset(assetContainerHeightDp: Int) {
             .width(200.dp)
             .height(200.dp), contentDescription = "")
     }
-}
-
-fun Offset.rotateBy(angle: Float): Offset {
-    val angleInRadians = angle * Math.PI / 180
-    return Offset(
-        (x * Math.cos(angleInRadians) - y * Math.sin(angleInRadians)).toFloat(),
-        (x * Math.sin(angleInRadians) + y * Math.cos(angleInRadians)).toFloat()
-    )
 }

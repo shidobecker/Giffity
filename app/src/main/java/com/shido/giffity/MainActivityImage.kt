@@ -22,14 +22,14 @@ import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.shido.giffity.ui.MainState
-import com.shido.giffity.ui.compose.BackgroundAsset
+import com.shido.giffity.ui.compose.BackgroundAssetImage
 import com.shido.giffity.ui.compose.SelectBackgroundAsset
 import com.shido.giffity.ui.compose.theme.GiffityTheme
-import com.shido.giffity.viewmodel.MainViewModel
+import com.shido.giffity.viewmodel.MainViewModelImage
 
-class MainActivity : ComponentActivity() {
+class MainActivityImage : ComponentActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: MainViewModelImage by viewModels()
 
     private val cropAssetLauncher: ActivityResultLauncher<CropImageContractOptions> =
         registerForActivityResult(CropImageContract()) { result ->
@@ -38,8 +38,9 @@ class MainActivity : ComponentActivity() {
                     when (val state = viewModel.state.value) {
                         is MainState.DisplayBackgroundAsset, is MainState.DisplaySelectBackgroundAsset -> {
                             viewModel.updateState(
-                                MainState.DisplayBackgroundAsset(
-                                    backgroundAssetUri = uri
+                                MainState.DisplayBackgroundAssetImage(
+                                    backgroundAssetUri = uri,
+                                    capturedBitmap = null
                                 )
                             )
                         }
@@ -96,17 +97,18 @@ class MainActivity : ComponentActivity() {
                                 })
                             }
 
-                            is MainState.DisplayBackgroundAssetImage -> {
+                            is MainState.DisplayBackgroundAsset -> {
 
                             }
 
-                            is MainState.DisplayBackgroundAsset -> {
-                                BackgroundAsset(backgroundAssetUri = state.backgroundAssetUri,
+                            is MainState.DisplayBackgroundAssetImage -> {
+                                BackgroundAssetImage(backgroundAssetUri = state.backgroundAssetUri,
+                                    capturedBitmap = state.capturedBitmap,
                                     updateCapturingViewBounds = { rect ->
                                         viewModel.updateState(state.copy(capturingViewBounds = rect))
                                     },
                                     startBitmapCaptureJob = {
-                                        viewModel.runBitmapCaptureJob(view = view, window = window)
+                                        viewModel.captureScreenshot(view = view, window = window)
                                     },
                                     launchImagePicker = {
                                         launchPicker()
@@ -124,7 +126,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launchWhenResumed {
             viewModel.toastEventRelay.collect { toastEvent ->
                 toastEvent?.let { event ->
-                    Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivityImage, event.message, Toast.LENGTH_LONG).show()
                 }
             }
         }
