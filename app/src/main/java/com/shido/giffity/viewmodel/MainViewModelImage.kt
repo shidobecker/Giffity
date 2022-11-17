@@ -37,9 +37,9 @@ class MainViewModelImage : ViewModel() {
 
     private val dispatcher = IO
     private val pixelCopy = PixelCopyJobInteractor()
-    private val captureBitmaps: CaptureBitmaps = CaptureBitmapsInteractor(
-        pixelCopyJob = pixelCopy
-    )
+/*    private val captureBitmaps: CaptureBitmaps = CaptureBitmapsInteractor(
+        pixelCopyJob = pixelCopy,
+    )*/
 
     private val _state: MutableState<MainState> = mutableStateOf(MainState.Initial)
     val state: State<MainState> get() = _state

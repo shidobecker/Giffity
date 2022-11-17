@@ -17,12 +17,17 @@ import androidx.compose.material.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
+import com.shido.giffity.domain.RealCacheProvider
 import com.shido.giffity.ui.MainState
 import com.shido.giffity.ui.compose.BackgroundAsset
+import com.shido.giffity.ui.compose.Gif
 import com.shido.giffity.ui.compose.SelectBackgroundAsset
 import com.shido.giffity.ui.compose.theme.GiffityTheme
 import com.shido.giffity.viewmodel.MainViewModel
@@ -30,6 +35,8 @@ import com.shido.giffity.viewmodel.MainViewModel
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+
+    private lateinit var imageLoader: ImageLoader
 
     private val cropAssetLauncher: ActivityResultLauncher<CropImageContractOptions> =
         registerForActivityResult(CropImageContract()) { result ->
@@ -72,6 +79,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        //TODO: Remove this when hilt
+        viewModel.setCacheProvider(RealCacheProvider(application))
+
+        //TODO: Well be injeting the image loader later when we add hilt
+        imageLoader = ImageLoader.Builder(application).components {
+            if (Build.VERSION.SDK_INT >= 28) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }.build()
+
         collectFlows()
 
         setContent {
@@ -101,16 +120,33 @@ class MainActivity : ComponentActivity() {
                             }
 
                             is MainState.DisplayBackgroundAsset -> {
-                                BackgroundAsset(backgroundAssetUri = state.backgroundAssetUri,
+                                BackgroundAsset(
+                                    backgroundAssetUri = state.backgroundAssetUri,
                                     updateCapturingViewBounds = { rect ->
                                         viewModel.updateState(state.copy(capturingViewBounds = rect))
                                     },
                                     startBitmapCaptureJob = {
-                                        viewModel.runBitmapCaptureJob(view = view, window = window)
+                                        viewModel.runBitmapCaptureJob(
+                                            contentResolver = contentResolver,
+                                            view = view,
+                                            window = window
+                                        )
                                     },
+                                    stopBitmapCaptureJob = viewModel::endBitmapCaptureJob,
+                                    bitmapCaptureLoadingState = state.bitmapCaptureLoadingState,
                                     launchImagePicker = {
                                         launchPicker()
-                                    })
+                                    },
+                                    loadingState = state.loadingState
+                                )
+                            }
+
+                            is MainState.DisplayGif -> {
+                                Gif(
+                                    gifUri = state.gifUri,
+                                    imageLoader = imageLoader,
+                                    discardGif = viewModel::deleteGif
+                                )
                             }
                         }
                     }
@@ -134,5 +170,22 @@ class MainActivity : ComponentActivity() {
     private fun launchPicker() {
         backgroundAssetPickerLauncher.launch("image/*")
     }
+
+
+    /**
+     * Android storage directories
+     *
+     * Internal Storage Directories:
+     * Private -> Other apps can't see those files, only that app can see them
+     * (Temporary gif) -> Cache -> Don't need to write permission
+     *
+     * External Storage Directories:
+     * Public -> Other apps can see it
+     * (Final gif) ->
+     * Scope storage -> Don't need to ask for permission.
+     * 28 or below -> Ask for permission
+     */
+
+
 }
 

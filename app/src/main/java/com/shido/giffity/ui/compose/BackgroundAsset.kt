@@ -35,13 +35,17 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.rememberAsyncImagePainter
 import com.shido.giffity.R
+import com.shido.giffity.domain.DataState
 
 @Composable
 fun BackgroundAsset(
     backgroundAssetUri: Uri,
     updateCapturingViewBounds: (Rect) -> Unit,
+    bitmapCaptureLoadingState: DataState.Loading.LoadingState,
     startBitmapCaptureJob: () -> Unit,
-    launchImagePicker: () -> Unit
+    stopBitmapCaptureJob: () -> Unit,
+    launchImagePicker: () -> Unit,
+    loadingState: DataState.Loading.LoadingState
 ) {
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (topBar, assetContainer, bottomContainer) = createRefs()
@@ -49,8 +53,6 @@ fun BackgroundAsset(
         //Top bar
         //topBarHeight = (default app bar height + button padding)
         val topBarHeight = remember { 56 + 16 }
-
-        var isRecording by remember { mutableStateOf(false) }
 
         RecordActionBar(modifier = Modifier
             .fillMaxWidth()
@@ -62,15 +64,9 @@ fun BackgroundAsset(
             }
             .zIndex(2f)
             .background(color = Color.White),
-            isRecording = isRecording,
-            updateIsRecording = {
-                isRecording = it
-                if (isRecording) {
-                    startBitmapCaptureJob()
-                    isRecording = false
-                }
-
-            })
+            bitmapCaptureLoadingState = bitmapCaptureLoadingState,
+            startBitmapCaptureJob = startBitmapCaptureJob,
+            stopBitmapCaptureJob = stopBitmapCaptureJob)
 
         //Gif capture area
         val configuration = LocalConfiguration.current
@@ -86,6 +82,8 @@ fun BackgroundAsset(
             updateCapturingViewBounds = updateCapturingViewBounds,
             backgroundAssetUri = backgroundAssetUri,
             assetContainerHeightDp = assetContainerHeight)
+
+        StandardLoadingUI(loadingState = loadingState)
 
 
         //Bottom Container
@@ -103,7 +101,7 @@ fun BackgroundAsset(
             }
             .zIndex(2f)
             .background(color = Color.White),
-            isRecording = isRecording,
+            isRecording = bitmapCaptureLoadingState is DataState.Loading.LoadingState.Active,
             launchImagePicker = launchImagePicker)
     }
 }

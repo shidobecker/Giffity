@@ -101,6 +101,10 @@ class MainActivityImage : ComponentActivity() {
 
                             }
 
+                            is MainState.DisplayGif -> {
+
+                            }
+
                             is MainState.DisplayBackgroundAssetImage -> {
                                 BackgroundAssetImage(backgroundAssetUri = state.backgroundAssetUri,
                                     capturedBitmap = state.capturedBitmap,

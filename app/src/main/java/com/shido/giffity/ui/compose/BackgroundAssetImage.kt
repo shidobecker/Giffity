@@ -54,25 +54,6 @@ fun BackgroundAssetImage(
 
         var isRecording by remember { mutableStateOf(false) }
 
-        RecordActionBar(modifier = Modifier
-            .fillMaxWidth()
-            .height(topBarHeight.dp)
-            .constrainAs(topBar) {
-                top.linkTo(parent.top)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }
-            .zIndex(2f)
-            .background(color = Color.White),
-            isRecording = isRecording,
-            updateIsRecording = {
-                isRecording = it
-                if (isRecording) {
-                    startBitmapCaptureJob()
-                    isRecording = false
-                }
-
-            })
 
         //Gif capture area
         val configuration = LocalConfiguration.current

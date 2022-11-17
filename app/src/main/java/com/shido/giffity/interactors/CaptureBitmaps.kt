@@ -7,9 +7,12 @@ import android.view.Window
 import androidx.compose.ui.geometry.Rect
 import androidx.core.graphics.applyCanvas
 import com.shido.giffity.domain.DataState
+import com.shido.giffity.domain.VersionProvider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 interface CaptureBitmaps {
@@ -23,7 +26,11 @@ interface CaptureBitmaps {
 }
 
 
-class CaptureBitmapsInteractor constructor(private val pixelCopyJob: PixelCopyJob) :
+class CaptureBitmapsInteractor constructor(
+    private val pixelCopyJob: PixelCopyJob,
+    private val mainDispatcher: CoroutineDispatcher,
+    private val versionProvider: VersionProvider
+) :
     CaptureBitmaps {
 
     override fun execute(
@@ -47,7 +54,7 @@ class CaptureBitmapsInteractor constructor(private val pixelCopyJob: PixelCopyJo
 
                 emit(DataState.Loading(DataState.Loading.LoadingState.Active(elapsedTime / TOTAL_CAPTURE_TIME))) //Progress
 
-                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val bitmap = if (versionProvider.provideVersion() >= Build.VERSION_CODES.O) {
                     check(window != null) { "Window is required for pixelcopy" }
 
                     when (val pixelCopyJobState =
@@ -78,8 +85,8 @@ class CaptureBitmapsInteractor constructor(private val pixelCopyJob: PixelCopyJo
     }
 
     //To capture screenshot on API 25 or below
-    private fun captureBitmap(rect: Rect, view: View): Bitmap {
-        return Bitmap.createBitmap(
+    private suspend fun captureBitmap(rect: Rect, view: View) = withContext(mainDispatcher) {
+        val bitmap = Bitmap.createBitmap(
             rect.width.roundToInt(),
             rect.height.roundToInt(),
             Bitmap.Config.ARGB_8888
@@ -87,6 +94,8 @@ class CaptureBitmapsInteractor constructor(private val pixelCopyJob: PixelCopyJo
             translate(-rect.left, -rect.top)
             view.draw(this)
         }
+
+        return@withContext bitmap
     }
 
     companion object {

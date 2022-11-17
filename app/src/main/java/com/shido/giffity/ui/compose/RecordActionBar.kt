@@ -1,29 +1,34 @@
 package com.shido.giffity.ui.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shido.giffity.domain.DataState
 
 @Composable
 fun RecordActionBar(
-    modifier: Modifier, isRecording: Boolean, updateIsRecording: (Boolean) -> Unit
+    modifier: Modifier,
+    bitmapCaptureLoadingState: DataState.Loading.LoadingState,
+    startBitmapCaptureJob: () -> Unit,
+    stopBitmapCaptureJob: () -> Unit,
 ) {
 
     Row(
@@ -37,26 +42,60 @@ fun RecordActionBar(
                 .height(50.dp)
                 .background(Color.Transparent)
         ) {
-            //TODO
+            if (bitmapCaptureLoadingState is DataState.Loading.LoadingState.Active) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = Color.Black,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .align(Alignment.Center)
+                        .fillMaxWidth()
+                        .height(45.dp)
+                        .padding(end = 16.dp)
+                        .clip(
+                            RoundedCornerShape(4.dp)
+                        ),
+                    progress = bitmapCaptureLoadingState.progress ?: 0f,
+                    backgroundColor = Color.White,
+                    color = MaterialTheme.colors.primary
+                )
+            }
         }
 
         RecordButton(
             modifier = Modifier.weight(1f),
-            isRecording = isRecording,
-            updateIsRecording = updateIsRecording
+            bitmapCaptureLoadingState = bitmapCaptureLoadingState,
+            startBitmapCaptureJob = startBitmapCaptureJob,
+            stopBitmapCaptureJob = stopBitmapCaptureJob
         )
     }
 }
 
 @Composable
-fun RecordButton(modifier: Modifier, isRecording: Boolean, updateIsRecording: (Boolean) -> Unit) {
+fun RecordButton(
+    modifier: Modifier,
+    bitmapCaptureLoadingState: DataState.Loading.LoadingState,
+    startBitmapCaptureJob: () -> Unit,
+    stopBitmapCaptureJob: () -> Unit,
+) {
+    val isRecording = when (bitmapCaptureLoadingState) {
+        is DataState.Loading.LoadingState.Active -> true
+        is DataState.Loading.LoadingState.Idle -> false
+    }
+
     Button(
         modifier = modifier.wrapContentWidth(),
         colors = if (isRecording) ButtonDefaults.buttonColors(backgroundColor = Color.Red) else ButtonDefaults.buttonColors(
             backgroundColor = MaterialTheme.colors.primary
         ),
         onClick = {
-            updateIsRecording(isRecording.not())
+            if (!isRecording) {
+                startBitmapCaptureJob()
+            } else {
+                stopBitmapCaptureJob()
+            }
         }
     ) {
         Text(
