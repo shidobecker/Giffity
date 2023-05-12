@@ -9,11 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,8 +59,8 @@ fun RecordActionBar(
                             RoundedCornerShape(4.dp)
                         ),
                     progress = bitmapCaptureLoadingState.progress ?: 0f,
-                    backgroundColor = Color.White,
-                    color = MaterialTheme.colors.primary
+                    trackColor = Color.White,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -87,8 +88,8 @@ fun RecordButton(
 
     Button(
         modifier = modifier.wrapContentWidth(),
-        colors = if (isRecording) ButtonDefaults.buttonColors(backgroundColor = Color.Red) else ButtonDefaults.buttonColors(
-            backgroundColor = MaterialTheme.colors.primary
+        colors = if (isRecording) ButtonDefaults.buttonColors(containerColor = Color.Red) else ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
         ),
         onClick = {
             if (!isRecording) {
@@ -99,7 +100,7 @@ fun RecordButton(
         }
     ) {
         Text(
-            style = MaterialTheme.typography.button.copy(
+            style = MaterialTheme.typography.bodySmall.copy(
                 fontWeight = FontWeight.Bold
             ), text = if (isRecording) "End" else "Record"
         )

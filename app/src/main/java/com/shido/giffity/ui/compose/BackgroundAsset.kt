@@ -36,6 +36,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.rememberAsyncImagePainter
 import com.shido.giffity.R
 import com.shido.giffity.domain.DataState
+import kotlinx.coroutines.NonDisposableHandle.parent
 
 @Composable
 fun BackgroundAsset(

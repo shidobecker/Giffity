@@ -1,6 +1,7 @@
 package com.shido.giffity.viewmodel
 
 import android.content.ContentResolver
+import android.content.Context
 import android.os.Build
 import android.view.View
 import android.view.Window
@@ -23,6 +24,9 @@ import com.shido.giffity.interactors.CaptureBitmapsInteractor.Companion.CAPTURE_
 import com.shido.giffity.interactors.ClearGifCache
 import com.shido.giffity.interactors.ClearGifCacheInteractor
 import com.shido.giffity.interactors.PixelCopyJobInteractor
+import com.shido.giffity.interactors.SaveGifToExternalStorage
+import com.shido.giffity.interactors.SaveGifToExternalStorageInteractor
+import com.shido.giffity.interactors.SaveGifToExternalStorageInteractor.Companion.SAVE_GIF_TO_EXTERNAL_STORAGE_ERROR
 import com.shido.giffity.ui.MainState
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
@@ -46,6 +51,11 @@ class MainViewModel : ViewModel() {
     private val versionProvider = RealVersionProvider()
 
     private val pixelCopy = PixelCopyJobInteractor()
+
+    private val saveGifToExternalStorage: SaveGifToExternalStorage =
+        SaveGifToExternalStorageInteractor(
+            versionProvider = versionProvider
+        )
 
     private val captureBitmaps: CaptureBitmaps = CaptureBitmapsInteractor(
         pixelCopyJob = pixelCopy, mainDispatcher = mainDispatcher, versionProvider = versionProvider
@@ -68,7 +78,7 @@ class MainViewModel : ViewModel() {
         _state.value = mainState
     }
 
-    fun toastShow(id: String = UUID.randomUUID().toString(), message: String) {
+    fun showToast(id: String = UUID.randomUUID().toString(), message: String) {
         _toastEventRelay.tryEmit(ToastEvent(id = id, message = message))
     }
 
@@ -80,32 +90,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    //Old
-    /* @RequiresApi(Build.VERSION_CODES.O)
-     fun captureScreenshot(view: View, window: Window) {
-         val state = state.value
-         check(state is MainState.DisplayBackgroundAsset) { "Invalid state  $state" }
-         CoroutineScope(dispatcher).launch {
-             val result = pixelCopy.execute(
-                 capturingViewBounds = state.capturingViewBounds, view = view, window = window
-             )
-
-             when (result) {
-                 is PixelCopyJob.PixelCopyJobState.Done -> {
-                     _state.value = state.copy(capturedBitmap = result.bitmap)
-                 }
-
-                 is PixelCopyJob.PixelCopyJobState.Error -> {
-                     publishErrorEvent(
-                         ErrorEvent(
-                             id = UUID.randomUUID().toString(), message = result.message
-                         )
-                     )
-                 }
-
-             }
-         }
-     } */
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun runBitmapCaptureJob(contentResolver: ContentResolver, view: View, window: Window) {
@@ -284,7 +268,11 @@ class MainViewModel : ViewModel() {
                                 MainState.DisplayGif(
                                     gifUri = gifUri,
                                     originalGifSize = gifSize,
-                                    backgroundAssetUri = it.backgroundAssetUri
+                                    backgroundAssetUri = it.backgroundAssetUri,
+                                    resizedGifUri = null,
+                                    adjustedBytes = gifSize,
+                                    sizePercentage = 100,
+                                    capturedBitmaps = it.capturedBitmaps
                                 )
                             )
 
@@ -315,6 +303,42 @@ class MainViewModel : ViewModel() {
         check(state.value is MainState.DisplayGif) { "deleteGif : Invalid State: ${state.value}" }
         //Resetting the state
         updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = (state.value as MainState.DisplayGif).backgroundAssetUri))
+    }
+
+    fun saveGif(
+        contentResolver: ContentResolver,
+        context: Context,
+        launchPermissionRequest: () -> Unit, checkFilePermissions: () -> Boolean
+    ) {
+        check(state.value is MainState.DisplayGif) { "Incorrect state" }
+
+        if (versionProvider.provideVersion() < Build.VERSION_CODES.Q && checkFilePermissions().not()) {
+            launchPermissionRequest()
+            return
+        }
+
+        val uriToSave = (state.value as MainState.DisplayGif).gifUri ?: throw Exception(
+            SAVE_GIF_TO_EXTERNAL_STORAGE_ERROR
+        )
+        saveGifToExternalStorage.execute(
+            contentResolver = contentResolver,
+            context = context,
+            cachedUri = uriToSave,
+            checkFilePermissions = checkFilePermissions
+        ).onEach { dataState ->
+            dataState.whenState(onLoading = {
+                updateState((state.value as MainState.DisplayGif).copy(saveGifLoadingState = it.loading))
+            }, onError = {
+                publishErrorEvent(ErrorEvent(message = it))
+            }, onData = {
+                showToast(message = "Saved")
+            })
+        }.onCompletion {
+            clearCachedFiles()
+            updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = (state.value as MainState.DisplayGif).backgroundAssetUri))
+
+        }.flowOn(dispatcher).launchIn(viewModelScope)
+
     }
 
 }

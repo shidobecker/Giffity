@@ -10,8 +10,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-
+        maven("https://maven.google.com")
+        maven("https://jitpack.io")
     }
+
 }
+
 rootProject.name = "Giffity"
-include ':app'
+include (":app")

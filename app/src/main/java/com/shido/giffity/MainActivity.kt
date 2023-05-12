@@ -1,5 +1,7 @@
 package com.shido.giffity
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,10 +14,11 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
 import coil.decode.GifDecoder
@@ -38,6 +41,37 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var imageLoader: ImageLoader
 
+    fun checkFilePermissions(): Boolean {
+        val writePermission = ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+        val readPermission = ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+        return writePermission == PackageManager.PERMISSION_GRANTED && readPermission == PackageManager.PERMISSION_GRANTED
+    }
+
+    private val externalStoragePermissionRequest = this@MainActivity.registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissions.entries.forEach {
+            if (!it.value) {
+                viewModel.showToast(message = "To enable this permission you'll have to do so in system settings for this app.")
+            }
+        }
+    }
+
+    private fun launchPermissionRequest() {
+        externalStoragePermissionRequest.launch(
+            arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+            )
+        )
+    }
+
     private val cropAssetLauncher: ActivityResultLauncher<CropImageContractOptions> =
         registerForActivityResult(CropImageContract()) { result ->
             if (result.isSuccessful) {
@@ -56,7 +90,7 @@ class MainActivity : ComponentActivity() {
                     Log.d("Tag", "Got the uri${uri}")
                 }
             } else {
-                viewModel.toastShow(message = "Something went wrong cropping the image")
+                viewModel.showToast(message = "Something went wrong cropping the image")
             }
         }
 
@@ -70,7 +104,7 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                 )
-            } ?: viewModel.toastShow(message = "Something wrong when selecting the image")
+            } ?: viewModel.showToast(message = "Something wrong when selecting the image")
 
         }
 
@@ -96,7 +130,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             GiffityTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
 
                     val state = viewModel.state.value
@@ -145,7 +179,33 @@ class MainActivity : ComponentActivity() {
                                 Gif(
                                     gifUri = state.gifUri,
                                     imageLoader = imageLoader,
-                                    discardGif = viewModel::deleteGif
+                                    discardGif = viewModel::deleteGif,
+                                    onSaveGif = {
+                                        viewModel.saveGif(
+                                            context = this@MainActivity,
+                                            contentResolver = contentResolver,
+                                            launchPermissionRequest = ::launchPermissionRequest,
+                                            checkFilePermissions = ::checkFilePermissions
+                                        )
+                                    },
+                                    gifSaveLoadingState = state.saveGifLoadingState,
+                                    resetToOriginal = {
+                                        //TODO
+                                    },
+                                    isResizedGif = state.resizedGifUri != null,
+                                    currentGifSize = state.originalGifSize,
+                                    sizePercentage = state.sizePercentage,
+                                    adjustedBytes = state.adjustedBytes,
+                                    updateAdjustedBytes = {
+                                        //TODO
+                                    },
+                                    updateSizePercentage = {
+                                        //TODO
+                                    },
+                                    resizeGif = {
+                                        //TODO
+                                    },
+                                    gifResizingLoadingState = state.resizeGifLoadingState,
                                 )
                             }
                         }
@@ -184,6 +244,8 @@ class MainActivity : ComponentActivity() {
      * (Final gif) ->
      * Scope storage -> Don't need to ask for permission.
      * 28 or below -> Ask for permission
+     *
+     * SD Card -> Extra storage that is external as well = more external storage
      */
 
 

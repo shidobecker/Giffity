@@ -27,7 +27,17 @@ sealed class MainState {
         val originalGifSize: Int,
 
         //Carry the original background asset Uri in case user resets the gif
-        val backgroundAssetUri: Uri
+        val backgroundAssetUri: Uri,
+
+        //Displayed as a CircularIndeterminateProgressBar overlayed in the center of the screen
+        val saveGifLoadingState: DataState.Loading.LoadingState = DataState.Loading.LoadingState.Idle,
+
+        val resizedGifUri: Uri?,
+        val adjustedBytes: Int,
+        val sizePercentage: Int,
+        val capturedBitmaps: List<Bitmap> = listOf(), //Take the list of bitmaps loop them and resize each one
+
+        val resizeGifLoadingState: DataState.Loading.LoadingState = DataState.Loading.LoadingState.Idle,
     ) : MainState()
 
     data class DisplayBackgroundAssetImage(
@@ -35,6 +45,7 @@ sealed class MainState {
         val capturingViewBounds: Rect? = null,
         val capturedBitmap: Bitmap? = null
     ) : MainState()
+
 
 }
 
