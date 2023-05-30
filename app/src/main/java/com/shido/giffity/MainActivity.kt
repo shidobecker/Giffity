@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
 
                             is MainState.DisplayGif -> {
                                 Gif(
-                                    gifUri = state.gifUri,
+                                    gifUri = state.resizedGifUri ?: state.gifUri,
                                     imageLoader = imageLoader,
                                     discardGif = viewModel::deleteGif,
                                     onSaveGif = {
@@ -189,21 +189,15 @@ class MainActivity : ComponentActivity() {
                                         )
                                     },
                                     gifSaveLoadingState = state.saveGifLoadingState,
-                                    resetToOriginal = {
-                                        //TODO
-                                    },
+                                    resetToOriginal = viewModel::resetGifToOriginal,
                                     isResizedGif = state.resizedGifUri != null,
                                     currentGifSize = state.originalGifSize,
                                     sizePercentage = state.sizePercentage,
                                     adjustedBytes = state.adjustedBytes,
-                                    updateAdjustedBytes = {
-                                        //TODO
-                                    },
-                                    updateSizePercentage = {
-                                        //TODO
-                                    },
+                                    updateAdjustedBytes = viewModel::updateAdjustedBytes,
+                                    updateSizePercentage = viewModel::updateSizePercentage,
                                     resizeGif = {
-                                        //TODO
+                                        viewModel.resizeGif(contentResolver = contentResolver)
                                     },
                                     gifResizingLoadingState = state.resizeGifLoadingState,
                                 )

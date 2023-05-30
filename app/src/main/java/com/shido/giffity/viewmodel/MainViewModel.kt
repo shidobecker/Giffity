@@ -2,6 +2,7 @@ package com.shido.giffity.viewmodel
 
 import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.view.View
 import android.view.Window
@@ -24,10 +25,15 @@ import com.shido.giffity.interactors.CaptureBitmapsInteractor.Companion.CAPTURE_
 import com.shido.giffity.interactors.ClearGifCache
 import com.shido.giffity.interactors.ClearGifCacheInteractor
 import com.shido.giffity.interactors.PixelCopyJobInteractor
+import com.shido.giffity.interactors.ResizeGif
+import com.shido.giffity.interactors.ResizeGifInteractor
+import com.shido.giffity.interactors.ResizeGifInteractor.Companion.RESIZE_ERROR_MESSAGE
 import com.shido.giffity.interactors.SaveGifToExternalStorage
 import com.shido.giffity.interactors.SaveGifToExternalStorageInteractor
 import com.shido.giffity.interactors.SaveGifToExternalStorageInteractor.Companion.SAVE_GIF_TO_EXTERNAL_STORAGE_ERROR
 import com.shido.giffity.ui.MainState
+import com.shido.giffity.ui.asDisplayBackgroundAssetState
+import com.shido.giffity.ui.asDisplayGifState
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
@@ -41,6 +47,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
+import java.io.File
 import java.util.UUID
 
 class MainViewModel : ViewModel() {
@@ -96,7 +103,7 @@ class MainViewModel : ViewModel() {
         check(state.value is MainState.DisplayBackgroundAsset) { "Invalid state  $state" }
         //Set the job is running
         updateState(
-            (state.value as MainState.DisplayBackgroundAsset).copy(
+            (state.asDisplayBackgroundAssetState()).copy(
                 bitmapCaptureLoadingState = DataState.Loading.LoadingState.Active(
                     0f
                 )
@@ -126,7 +133,7 @@ class MainViewModel : ViewModel() {
 
         //Execute the use case
         captureBitmaps.execute(
-            capturingViewBounds = (state.value as MainState.DisplayBackgroundAsset).capturingViewBounds,
+            capturingViewBounds = (state.asDisplayBackgroundAssetState()).capturingViewBounds,
             window = window,
             view = view
         ).onEach { dataState ->
@@ -136,7 +143,7 @@ class MainViewModel : ViewModel() {
                 is DataState.Data -> {
                     dataState.data?.let { bitmaps ->
                         updateState(
-                            (state.value as MainState.DisplayBackgroundAsset).copy(
+                            (state.asDisplayBackgroundAssetState()).copy(
                                 capturedBitmaps = bitmaps
                             )
                         )
@@ -148,7 +155,7 @@ class MainViewModel : ViewModel() {
                     bitmapCaptureJob.cancel(CAPTURE_BITMAP_ERROR)
 
                     updateState(
-                        (state.value as MainState.DisplayBackgroundAsset).copy(
+                        (state.asDisplayBackgroundAssetState()).copy(
                             bitmapCaptureLoadingState = DataState.Loading.LoadingState.Idle
                         )
                     )
@@ -157,7 +164,7 @@ class MainViewModel : ViewModel() {
 
                 is DataState.Loading -> {
                     updateState(
-                        (state.value as MainState.DisplayBackgroundAsset).copy(
+                        (state.asDisplayBackgroundAssetState()).copy(
                             bitmapCaptureLoadingState = dataState.loading
                         )
                     )
@@ -168,7 +175,7 @@ class MainViewModel : ViewModel() {
         }.flowOn(dispatcher).launchIn(viewModelScope + bitmapCaptureJob)
             .invokeOnCompletion { throwable ->
                 updateState(
-                    (state.value as MainState.DisplayBackgroundAsset).copy(
+                    (state.asDisplayBackgroundAssetState()).copy(
                         bitmapCaptureLoadingState = DataState.Loading.LoadingState.Idle
                     )
                 )
@@ -211,7 +218,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun endBitmapCaptureJob() {
-        updateState((state.value as MainState.DisplayBackgroundAsset).copy(bitmapCaptureLoadingState = DataState.Loading.LoadingState.Idle))
+        updateState((state.asDisplayBackgroundAssetState()).copy(bitmapCaptureLoadingState = DataState.Loading.LoadingState.Idle))
     }
 
 
@@ -223,16 +230,19 @@ class MainViewModel : ViewModel() {
     private fun buildGif(contentResolver: ContentResolver) {
         check(state.value is MainState.DisplayBackgroundAsset) { "Invalid state ${state.value}" }
 
-        val capturedBitmaps = (state.value as MainState.DisplayBackgroundAsset).capturedBitmaps
+        val capturedBitmaps = (state.asDisplayBackgroundAssetState()).capturedBitmaps
 
         check(capturedBitmaps.isNotEmpty()) { "You have no bitmaps to build a gif with!" }
 
-        updateState((state.value as MainState.DisplayBackgroundAsset).copy(loadingState = DataState.Loading.LoadingState.Active()))
+        updateState((state.asDisplayBackgroundAssetState()).copy(loadingState = DataState.Loading.LoadingState.Active()))
 
         //TODO: This will be injected into the viewmodel later
 
-        cacheProvider?.let {
-            val buildGif = BuildGifInteractor(cacheProvider = it, versionProvider = versionProvider)
+        cacheProvider?.let { cacheProvider1 ->
+            val buildGif = BuildGifInteractor(
+                cacheProvider = cacheProvider1,
+                versionProvider = versionProvider
+            )
 
             buildGif.execute(contentResolver = contentResolver, bitmaps = capturedBitmaps)
                 .onEach { dataState ->
@@ -243,7 +253,7 @@ class MainViewModel : ViewModel() {
                         //Emissions can still come after the job is complete
                         if (state.value is MainState.DisplayBackgroundAsset) {
                             updateState(
-                                (state.value as MainState.DisplayBackgroundAsset).copy(
+                                (state.asDisplayBackgroundAssetState()).copy(
                                     loadingState = loadingState.loading
                                 )
                             )
@@ -252,27 +262,25 @@ class MainViewModel : ViewModel() {
                     }, onError = { message ->
 
                         publishErrorEvent(ErrorEvent(message = message))
-
                         updateState(
-                            (state.value as MainState.DisplayBackgroundAsset).copy(
+                            (state.asDisplayBackgroundAssetState()).copy(
                                 loadingState = DataState.Loading.LoadingState.Idle
                             )
                         )
 
                     }, onData = { gifResult ->
-                        (state.value as MainState.DisplayBackgroundAsset).let {
+                        (state.asDisplayBackgroundAssetState()).let { displayBackgroundAsset ->
                             val gifSize = gifResult?.gifSize ?: 0
                             val gifUri = gifResult?.uri
-
                             updateState(
                                 MainState.DisplayGif(
                                     gifUri = gifUri,
                                     originalGifSize = gifSize,
-                                    backgroundAssetUri = it.backgroundAssetUri,
+                                    backgroundAssetUri = displayBackgroundAsset.backgroundAssetUri,
                                     resizedGifUri = null,
                                     adjustedBytes = gifSize,
                                     sizePercentage = 100,
-                                    capturedBitmaps = it.capturedBitmaps
+                                    capturedBitmaps = displayBackgroundAsset.capturedBitmaps
                                 )
                             )
 
@@ -285,6 +293,113 @@ class MainViewModel : ViewModel() {
 
 
     }
+
+    fun resizeGif(contentResolver: ContentResolver) {
+        check(state.value is MainState.DisplayGif) { "Invalid State ${state.value}" }
+        state.asDisplayGifState().let {
+            //Calculate the target size of the resulting gif
+            val targetSize = it.originalGifSize * (it.sizePercentage.toFloat() / 100)
+
+            //TODO("This is be injected later when we add hilt")
+
+            val resizeGif: ResizeGif = ResizeGifInteractor(
+                versionProvider = versionProvider,
+                cacheProvider = cacheProvider!! //For now  until hilt
+            )
+
+            resizeGif.execute(contentResolver = contentResolver,
+                capturedBitmaps = it.capturedBitmaps,
+                originalGifSize = it.originalGifSize.toFloat(),
+                targetSize = targetSize,
+                discardCachedGif = { uri ->
+                    discardCachedGif(uri)
+                }
+            ).onEach { dataState ->
+                when (dataState) {
+                    is DataState.Loading -> {
+                        updateState(
+                            state.asDisplayGifState()
+                                .copy(resizeGifLoadingState = dataState.loading)
+                        )
+                    }
+
+                    is DataState.Data -> {
+                        dataState.data?.let { data ->
+                            val copiedState = state.asDisplayGifState().copy(
+                                resizedGifUri = data.uri,
+                                adjustedBytes = data.gifSize
+                            )
+                            updateState(copiedState)
+                        } ?: publishErrorEvent(
+                            ErrorEvent(
+                                id = UUID.randomUUID().toString(),
+                                message = RESIZE_ERROR_MESSAGE
+                            )
+                        )
+                    }
+
+                    is DataState.Error -> {
+                        publishErrorEvent(
+                            ErrorEvent(
+                                id = UUID.randomUUID().toString(),
+                                message = dataState.message
+                            )
+                        )
+                    }
+                }
+            }.onCompletion {
+                updateState(
+                    state.asDisplayGifState()
+                        .copy(resizeGifLoadingState = DataState.Loading.LoadingState.Idle)
+                )
+            }.flowOn(dispatcher)
+                .launchIn(viewModelScope)
+        }
+    }
+
+
+    fun resetGifToOriginal() {
+        check(state.value is MainState.DisplayGif) { "Invalid State ${state.value}" }
+        (state.asDisplayGifState()).run {
+            resizedGifUri?.let { resizedGifUri ->
+                discardCachedGif(resizedGifUri)
+            }
+            updateState(
+                (state.asDisplayGifState()).copy(
+                    resizedGifUri = null,
+                    adjustedBytes = originalGifSize,
+                    sizePercentage = 100
+                )
+            )
+        }
+
+    }
+
+    fun updateAdjustedBytes(adjustedBytes: Int) {
+        check(state.value is MainState.DisplayGif) { "Invalid State ${state.value}" }
+        val displayGifState = state.asDisplayGifState()
+        updateState(displayGifState.copy(adjustedBytes = adjustedBytes))
+    }
+
+    fun updateSizePercentage(sizePercentage: Int) {
+        check(state.value is MainState.DisplayGif) { "Invalid State ${state.value}" }
+        val displayGifState = state.asDisplayGifState()
+
+        updateState(displayGifState.copy(sizePercentage = sizePercentage))
+    }
+
+    companion object {
+        const val DISCARD_CACHED_GIF_ERROR = "Failed To delete cached gif ar uri"
+
+        private fun discardCachedGif(uri: Uri) {
+            val file = File(uri.path)
+            val success = file.delete()
+            if (!success) {
+                throw Exception("$DISCARD_CACHED_GIF_ERROR")
+            }
+        }
+    }
+
 
     private fun clearCachedFiles() {
         //TODO WILL BE INJECTING THIS LATER
@@ -302,7 +417,7 @@ class MainViewModel : ViewModel() {
         clearCachedFiles()
         check(state.value is MainState.DisplayGif) { "deleteGif : Invalid State: ${state.value}" }
         //Resetting the state
-        updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = (state.value as MainState.DisplayGif).backgroundAssetUri))
+        updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = (state.asDisplayGifState()).backgroundAssetUri))
     }
 
     fun saveGif(
@@ -310,14 +425,17 @@ class MainViewModel : ViewModel() {
         context: Context,
         launchPermissionRequest: () -> Unit, checkFilePermissions: () -> Boolean
     ) {
-        check(state.value is MainState.DisplayGif) { "Incorrect state" }
+        check(state.value is MainState.DisplayGif) { "Incorrect state ${state.value}" }
 
         if (versionProvider.provideVersion() < Build.VERSION_CODES.Q && checkFilePermissions().not()) {
             launchPermissionRequest()
             return
         }
 
-        val uriToSave = (state.value as MainState.DisplayGif).gifUri ?: throw Exception(
+        val displayGifState = state.asDisplayGifState()
+
+        //Use resized gif uri if it was resized once
+        val uriToSave = displayGifState.let { it.resizedGifUri ?: it.gifUri } ?: throw Exception(
             SAVE_GIF_TO_EXTERNAL_STORAGE_ERROR
         )
         saveGifToExternalStorage.execute(
@@ -327,7 +445,7 @@ class MainViewModel : ViewModel() {
             checkFilePermissions = checkFilePermissions
         ).onEach { dataState ->
             dataState.whenState(onLoading = {
-                updateState((state.value as MainState.DisplayGif).copy(saveGifLoadingState = it.loading))
+                updateState(displayGifState.copy(saveGifLoadingState = it.loading))
             }, onError = {
                 publishErrorEvent(ErrorEvent(message = it))
             }, onData = {
@@ -335,7 +453,7 @@ class MainViewModel : ViewModel() {
             })
         }.onCompletion {
             clearCachedFiles()
-            updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = (state.value as MainState.DisplayGif).backgroundAssetUri))
+            updateState(MainState.DisplayBackgroundAsset(backgroundAssetUri = displayGifState.backgroundAssetUri))
 
         }.flowOn(dispatcher).launchIn(viewModelScope)
 

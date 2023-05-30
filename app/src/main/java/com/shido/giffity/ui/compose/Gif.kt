@@ -54,6 +54,12 @@ fun Gif(
 
     StandardLoadingUI(loadingState = gifSaveLoadingState)
 
+    //StandardLoadingUI(loadingState = gifResizingLoadingState)
+    //TODO: Linear progress indicator
+    if (gifResizingLoadingState is DataState.Loading.LoadingState.Active) {
+        Text(modifier = Modifier.fillMaxSize(), text = "REsizing GIF!")
+    }
+
     if (gifUri != null) {
         Column(modifier = Modifier.fillMaxSize()) {
             val configuration = LocalConfiguration.current
@@ -141,8 +147,14 @@ fun GifFooter(
         )
 
         if (isResizedGif) {
-            Button(modifier = Modifier.align(Alignment.End), onClick = resetResizing) {
-                Text(text = "$sizePercentage %", style = MaterialTheme.typography.bodyMedium)
+            Button(
+                modifier = Modifier.align(Alignment.End),
+                onClick = resetResizing
+            ) {
+                Text(
+                    text = "Reset resizing",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         } else {
             Text(

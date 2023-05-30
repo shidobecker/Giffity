@@ -2,6 +2,7 @@ package com.shido.giffity.ui
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.runtime.State
 import androidx.compose.ui.geometry.Rect
 import com.shido.giffity.domain.DataState
 
@@ -37,6 +38,7 @@ sealed class MainState {
         val sizePercentage: Int,
         val capturedBitmaps: List<Bitmap> = listOf(), //Take the list of bitmaps loop them and resize each one
 
+        //Displayed as a LinearProgressIndicator on middle of screen
         val resizeGifLoadingState: DataState.Loading.LoadingState = DataState.Loading.LoadingState.Idle,
     ) : MainState()
 
@@ -48,5 +50,25 @@ sealed class MainState {
 
 
 }
+
+fun State<MainState>.asInitialState() = this.value as MainState.Initial
+
+fun MainState.asInitialState() = this as MainState.Initial
+
+fun MainState.asDisplayBackgroundAssetState() = this as MainState.DisplayBackgroundAsset
+
+fun State<MainState>.asDisplayBackgroundAssetState() = this.value as MainState.DisplayBackgroundAsset
+
+fun MainState.asDisplaySelectBackgroundAssetState() = this as MainState.DisplaySelectBackgroundAsset
+
+fun State<MainState>.asDisplaySelectBackgroundAssetState() = this.value as MainState.DisplaySelectBackgroundAsset
+
+fun MainState.asDisplaySelectBackgroundAssetImageState() = this as MainState.DisplayBackgroundAssetImage
+
+fun State<MainState>.asDisplaySelectBackgroundAssetImageState() = this.value as MainState.DisplayBackgroundAssetImage
+
+fun MainState.asDisplayGifState() = this as MainState.DisplayGif
+
+fun State<MainState>.asDisplayGifState() = this.value as MainState.DisplayGif
 
 
