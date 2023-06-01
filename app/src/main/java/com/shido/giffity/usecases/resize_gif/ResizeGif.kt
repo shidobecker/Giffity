@@ -1,11 +1,11 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.resize_gif
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
-import com.shido.giffity.domain.CacheProvider
+import com.shido.giffity.domain.providers.CacheProvider
 import com.shido.giffity.domain.DataState
-import com.shido.giffity.domain.VersionProvider
+import com.shido.giffity.domain.providers.VersionProvider
 import com.shido.giffity.interactors.util.GifUtil.buildGifAndSaveToInternalStorage
 import dagger.Binds
 import dagger.Module

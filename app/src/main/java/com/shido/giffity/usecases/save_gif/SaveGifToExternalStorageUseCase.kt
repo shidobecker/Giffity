@@ -1,4 +1,4 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.save_gif
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
@@ -11,37 +11,16 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import com.shido.giffity.domain.DataState
-import com.shido.giffity.domain.VersionProvider
+import com.shido.giffity.domain.providers.VersionProvider
 import com.shido.giffity.domain.util.FileNameBuilder
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 
-interface SaveGifToExternalStorage {
 
-    fun execute(
-        contentResolver: ContentResolver,
-        context: Context,
-        cachedUri: Uri,
-        checkFilePermissions: () -> Boolean
-    ): Flow<DataState<Unit>>
-
-}
-
-@Module
-@InstallIn(ViewModelComponent::class)
-abstract class SaveGifToExternalStorageModule {
-    @Binds
-    abstract fun provideSaveGifToExternalStorageUseCase(saveGifToExternalStorageInteractor: SaveGifToExternalStorageInteractor): SaveGifToExternalStorage
-}
-
-class SaveGifToExternalStorageInteractor @Inject constructor(private val versionProvider: VersionProvider) :
+class SaveGifToExternalStorageUseCase @Inject constructor(private val versionProvider: VersionProvider) :
     SaveGifToExternalStorage {
 
     @SuppressLint("NewApi")

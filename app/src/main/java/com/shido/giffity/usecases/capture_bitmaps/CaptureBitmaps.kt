@@ -1,4 +1,4 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.capture_bitmaps
 
 import android.graphics.Bitmap
 import android.os.Build
@@ -8,7 +8,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.core.graphics.applyCanvas
 import com.shido.giffity.di.Main
 import com.shido.giffity.domain.DataState
-import com.shido.giffity.domain.VersionProvider
+import com.shido.giffity.domain.providers.VersionProvider
+import com.shido.giffity.usecases.pixel_copy_job.PixelCopyJob
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

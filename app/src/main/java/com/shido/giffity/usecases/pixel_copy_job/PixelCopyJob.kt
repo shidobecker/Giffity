@@ -1,4 +1,4 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.pixel_copy_job
 
 import android.graphics.Bitmap
 import android.os.Build

@@ -1,6 +1,6 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.clear_gif_cache
 
-import com.shido.giffity.domain.CacheProvider
+import com.shido.giffity.domain.providers.CacheProvider
 import com.shido.giffity.domain.DataState
 import dagger.Binds
 import dagger.Module

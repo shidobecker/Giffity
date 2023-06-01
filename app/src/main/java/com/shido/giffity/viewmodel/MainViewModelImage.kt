@@ -9,8 +9,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.shido.giffity.domain.ErrorEvent
-import com.shido.giffity.interactors.PixelCopyJob
-import com.shido.giffity.interactors.PixelCopyJobInteractor
+import com.shido.giffity.usecases.pixel_copy_job.PixelCopyJob
+import com.shido.giffity.usecases.pixel_copy_job.PixelCopyJobInteractor
 import com.shido.giffity.ui.MainState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO

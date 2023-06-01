@@ -1,11 +1,11 @@
-package com.shido.giffity.interactors
+package com.shido.giffity.usecases.build_gif
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
-import com.shido.giffity.domain.CacheProvider
+import com.shido.giffity.domain.providers.CacheProvider
 import com.shido.giffity.domain.DataState
-import com.shido.giffity.domain.VersionProvider
+import com.shido.giffity.domain.providers.VersionProvider
 import com.shido.giffity.interactors.util.GifUtil.buildGifAndSaveToInternalStorage
 import dagger.Binds
 import dagger.Module
@@ -25,14 +25,8 @@ data class BuildGifResult(
     val uri: Uri, val gifSize: Int
 )
 
-@Module
-@InstallIn(ViewModelComponent::class)
-abstract class BuildGifModule {
-    @Binds
-    abstract fun provideBuildGif(buildGifInteractor: BuildGifInteractor): BuildGif
-}
 
-class BuildGifInteractor @Inject constructor(
+class BuildGifUseCase @Inject constructor(
     private val versionProvider: VersionProvider, private val cacheProvider: CacheProvider
 ) : BuildGif {
     override fun execute(

@@ -1,4 +1,4 @@
-package com.shido.giffity.domain
+package com.shido.giffity.domain.providers
 
 import android.app.Application
 import dagger.Binds

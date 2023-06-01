@@ -6,12 +6,12 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
-import com.shido.giffity.domain.CacheProvider
-import com.shido.giffity.domain.VersionProvider
+import com.shido.giffity.domain.providers.CacheProvider
+import com.shido.giffity.domain.providers.VersionProvider
 import com.shido.giffity.domain.util.AnimatedGIFWriter
 import com.shido.giffity.domain.util.FileNameBuilder
-import com.shido.giffity.interactors.BuildGifInteractor
-import com.shido.giffity.interactors.BuildGifResult
+import com.shido.giffity.usecases.build_gif.BuildGifUseCase
+import com.shido.giffity.usecases.build_gif.BuildGifResult
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -23,7 +23,7 @@ object GifUtil {
         cacheProvider: CacheProvider,
         bitmaps: List<Bitmap>
     ): BuildGifResult {
-        check(bitmaps.isNotEmpty()) { BuildGifInteractor.NO_BITMAPS_ERROR }
+        check(bitmaps.isNotEmpty()) { BuildGifUseCase.NO_BITMAPS_ERROR }
 
         val writer = AnimatedGIFWriter(true)
         val bos = ByteArrayOutputStream()
@@ -60,7 +60,7 @@ object GifUtil {
             os.flush()
             os.close()
             uri
-        } ?: throw Exception(BuildGifInteractor.SAVE_GIF_TO_INTERNAL_STORAGE_ERROR)
+        } ?: throw Exception(BuildGifUseCase.SAVE_GIF_TO_INTERNAL_STORAGE_ERROR)
 
     }
 }
