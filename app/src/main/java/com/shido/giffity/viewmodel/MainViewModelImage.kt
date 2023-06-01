@@ -1,7 +1,6 @@
 package com.shido.giffity.viewmodel
 
 import android.os.Build
-import android.util.Log
 import android.view.View
 import android.view.Window
 import androidx.annotation.RequiresApi
@@ -9,28 +8,16 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.shido.giffity.domain.DataState
 import com.shido.giffity.domain.ErrorEvent
-import com.shido.giffity.interactors.CaptureBitmaps
-import com.shido.giffity.interactors.CaptureBitmapsInteractor
-import com.shido.giffity.interactors.CaptureBitmapsInteractor.Companion.CAPTURE_BITMAP_ERROR
-import com.shido.giffity.interactors.CaptureBitmapsInteractor.Companion.CAPTURE_BITMAP_SUCCESS
 import com.shido.giffity.interactors.PixelCopyJob
 import com.shido.giffity.interactors.PixelCopyJobInteractor
 import com.shido.giffity.ui.MainState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import java.util.UUID
 
 class MainViewModelImage : ViewModel() {
@@ -56,7 +43,7 @@ class MainViewModelImage : ViewModel() {
         _state.value = mainState
     }
 
-    fun toastShow(id: String = UUID.randomUUID().toString(), message: String) {
+    fun showToast(id: String = UUID.randomUUID().toString(), message: String) {
         _toastEventRelay.tryEmit(ToastEvent(id = id, message = message))
     }
 

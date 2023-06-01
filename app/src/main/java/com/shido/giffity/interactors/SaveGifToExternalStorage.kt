@@ -13,10 +13,15 @@ import androidx.annotation.RequiresApi
 import com.shido.giffity.domain.DataState
 import com.shido.giffity.domain.VersionProvider
 import com.shido.giffity.domain.util.FileNameBuilder
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.FileOutputStream
+import javax.inject.Inject
 
 interface SaveGifToExternalStorage {
 
@@ -29,7 +34,14 @@ interface SaveGifToExternalStorage {
 
 }
 
-class SaveGifToExternalStorageInteractor constructor(private val versionProvider: VersionProvider) :
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class SaveGifToExternalStorageModule {
+    @Binds
+    abstract fun provideSaveGifToExternalStorageUseCase(saveGifToExternalStorageInteractor: SaveGifToExternalStorageInteractor): SaveGifToExternalStorage
+}
+
+class SaveGifToExternalStorageInteractor @Inject constructor(private val versionProvider: VersionProvider) :
     SaveGifToExternalStorage {
 
     @SuppressLint("NewApi")

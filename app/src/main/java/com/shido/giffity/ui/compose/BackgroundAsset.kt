@@ -37,6 +37,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.shido.giffity.R
 import com.shido.giffity.domain.DataState
 import kotlinx.coroutines.NonDisposableHandle.parent
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun BackgroundAsset(
@@ -186,7 +188,7 @@ fun RenderAsset(assetContainerHeightDp: Int) {
 fun Offset.rotateBy(angle: Float): Offset {
     val angleInRadians = angle * Math.PI / 180
     return Offset(
-        (x * Math.cos(angleInRadians) - y * Math.sin(angleInRadians)).toFloat(),
-        (x * Math.sin(angleInRadians) + y * Math.cos(angleInRadians)).toFloat()
+        (x * cos(angleInRadians) - y * sin(angleInRadians)).toFloat(),
+        (x * sin(angleInRadians) + y * cos(angleInRadians)).toFloat()
     )
 }

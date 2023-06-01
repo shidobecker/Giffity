@@ -9,8 +9,13 @@ import android.view.View
 import android.view.Window
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Rect
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import javax.inject.Inject
 
 interface PixelCopyJob {
 
@@ -25,7 +30,15 @@ interface PixelCopyJob {
 
 }
 
-class PixelCopyJobInteractor : PixelCopyJob {
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class PixelCopyJobModule {
+    @Binds
+    abstract fun providePixelCopyJobUseCase(pixelCopyJobInteractor: PixelCopyJobInteractor): PixelCopyJob
+}
+
+
+class PixelCopyJobInteractor @Inject constructor() : PixelCopyJob {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @RequiresApi(Build.VERSION_CODES.O)
@@ -58,12 +71,18 @@ class PixelCopyJobInteractor : PixelCopyJob {
                     cont.resume(PixelCopyJob.PixelCopyJobState.Done(bmp), onCancellation = null)
 
                 } else {
-                    cont.resume(PixelCopyJob.PixelCopyJobState.Error(PIXEL_COPY_ERROR), onCancellation = null)
+                    cont.resume(
+                        PixelCopyJob.PixelCopyJobState.Error(PIXEL_COPY_ERROR),
+                        onCancellation = null
+                    )
                 }
             }, Handler(Looper.getMainLooper()))
 
         } catch (e: Exception) {
-            cont.resume(PixelCopyJob.PixelCopyJobState.Error(e.message ?: PIXEL_COPY_ERROR), onCancellation = null)
+            cont.resume(
+                PixelCopyJob.PixelCopyJobState.Error(e.message ?: PIXEL_COPY_ERROR),
+                onCancellation = null
+            )
 
         }
 

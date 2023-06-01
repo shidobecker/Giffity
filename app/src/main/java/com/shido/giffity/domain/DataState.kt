@@ -1,5 +1,7 @@
 package com.shido.giffity.domain
 
+import kotlin.math.roundToInt
+
 sealed class DataState<T> {
 
     data class Data<T>(val data: T? = null) : DataState<T>()
@@ -13,7 +15,9 @@ sealed class DataState<T> {
             //Active loading state with optional progress
             data class Active(
                 val progress: Float? = 0f
-            ) : LoadingState()
+            ) : LoadingState() {
+                val progressInPercent = progress?.let { it * 100 }?.roundToInt()
+            }
 
             object Idle : LoadingState()
 

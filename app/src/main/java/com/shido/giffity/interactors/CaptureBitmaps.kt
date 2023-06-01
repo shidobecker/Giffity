@@ -6,13 +6,19 @@ import android.view.View
 import android.view.Window
 import androidx.compose.ui.geometry.Rect
 import androidx.core.graphics.applyCanvas
+import com.shido.giffity.di.Main
 import com.shido.giffity.domain.DataState
 import com.shido.giffity.domain.VersionProvider
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
 interface CaptureBitmaps {
@@ -25,13 +31,19 @@ interface CaptureBitmaps {
 
 }
 
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class CaptureBitmapsModule {
+    @Binds
+    abstract fun provideCaptureBitmapsUseCase(captureBitmapsInteractor: CaptureBitmapsInteractor): CaptureBitmaps
+}
 
-class CaptureBitmapsInteractor constructor(
+
+class CaptureBitmapsInteractor @Inject constructor(
     private val pixelCopyJob: PixelCopyJob,
-    private val mainDispatcher: CoroutineDispatcher,
+    @Main private val main: CoroutineDispatcher,
     private val versionProvider: VersionProvider
-) :
-    CaptureBitmaps {
+) : CaptureBitmaps {
 
     override fun execute(
         capturingViewBounds: Rect?,
@@ -85,7 +97,7 @@ class CaptureBitmapsInteractor constructor(
     }
 
     //To capture screenshot on API 25 or below
-    private suspend fun captureBitmap(rect: Rect, view: View) = withContext(mainDispatcher) {
+    private suspend fun captureBitmap(rect: Rect, view: View) = withContext(main) {
         val bitmap = Bitmap.createBitmap(
             rect.width.roundToInt(),
             rect.height.roundToInt(),

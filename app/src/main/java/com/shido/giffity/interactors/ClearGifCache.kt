@@ -2,8 +2,13 @@ package com.shido.giffity.interactors
 
 import com.shido.giffity.domain.CacheProvider
 import com.shido.giffity.domain.DataState
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 interface ClearGifCache {
 
@@ -11,7 +16,15 @@ interface ClearGifCache {
 
 }
 
-class ClearGifCacheInteractor constructor(private val cacheProvider: CacheProvider) :
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class ClearGifCacheModule {
+    @Binds
+    abstract fun provideClearGifCacheUseCase(clearGifCacheInteractor: ClearGifCacheInteractor): ClearGifCache
+}
+
+
+class ClearGifCacheInteractor @Inject constructor(private val cacheProvider: CacheProvider) :
     ClearGifCache {
 
     override fun execute(): Flow<DataState<Boolean>> = flow {

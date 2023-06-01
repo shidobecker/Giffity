@@ -50,7 +50,7 @@ class MainActivityImage : ComponentActivity() {
                     Log.d("Tag", "Got the uri${uri}")
                 }
             } else {
-                viewModel.toastShow(message = "Something went wrong cropping the image")
+                viewModel.showToast(message = "Something went wrong cropping the image")
             }
         }
 
@@ -64,7 +64,7 @@ class MainActivityImage : ComponentActivity() {
                         )
                     )
                 )
-            } ?: viewModel.toastShow(message = "Something wrong when selecting the image")
+            } ?: viewModel.showToast(message = "Something wrong when selecting the image")
 
         }
 

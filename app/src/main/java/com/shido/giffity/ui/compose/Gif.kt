@@ -54,11 +54,7 @@ fun Gif(
 
     StandardLoadingUI(loadingState = gifSaveLoadingState)
 
-    //StandardLoadingUI(loadingState = gifResizingLoadingState)
-    //TODO: Linear progress indicator
-    if (gifResizingLoadingState is DataState.Loading.LoadingState.Active) {
-        Text(modifier = Modifier.fillMaxSize(), text = "REsizing GIF!")
-    }
+    ResizingGifLoadingUI(gifResizingLoadingState = gifResizingLoadingState)
 
     if (gifUri != null) {
         Column(modifier = Modifier.fillMaxSize()) {

@@ -21,25 +21,26 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
 import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
-import com.shido.giffity.domain.RealCacheProvider
 import com.shido.giffity.ui.MainState
 import com.shido.giffity.ui.compose.BackgroundAsset
 import com.shido.giffity.ui.compose.Gif
 import com.shido.giffity.ui.compose.SelectBackgroundAsset
 import com.shido.giffity.ui.compose.theme.GiffityTheme
 import com.shido.giffity.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
-    private lateinit var imageLoader: ImageLoader
+    @Inject
+    lateinit var imageLoader: ImageLoader
 
     fun checkFilePermissions(): Boolean {
         val writePermission = ContextCompat.checkSelfPermission(
@@ -113,18 +114,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //TODO: Remove this when hilt
-        viewModel.setCacheProvider(RealCacheProvider(application))
-
-        //TODO: Well be injeting the image loader later when we add hilt
-        imageLoader = ImageLoader.Builder(application).components {
-            if (Build.VERSION.SDK_INT >= 28) {
-                add(ImageDecoderDecoder.Factory())
-            } else {
-                add(GifDecoder.Factory())
-            }
-        }.build()
-
         collectFlows()
 
         setContent {
@@ -139,7 +128,6 @@ class MainActivity : ComponentActivity() {
                     Column(modifier = Modifier.fillMaxSize()) {
                         when (state) {
                             is MainState.Initial -> {
-                                //TODO SHOW LOADING
                                 viewModel.updateState(MainState.DisplaySelectBackgroundAsset)
                             }
 

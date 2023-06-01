@@ -7,8 +7,13 @@ import com.shido.giffity.domain.CacheProvider
 import com.shido.giffity.domain.DataState
 import com.shido.giffity.domain.VersionProvider
 import com.shido.giffity.interactors.util.GifUtil.buildGifAndSaveToInternalStorage
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 interface ResizeGif {
 
@@ -22,7 +27,16 @@ interface ResizeGif {
 
 }
 
-class ResizeGifInteractor constructor(
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class ResizeGifModule {
+    @Binds
+    abstract fun provideResizeGifUseCase(resizeGifInteractor: ResizeGifInteractor): ResizeGif
+}
+
+
+
+class ResizeGifInteractor @Inject constructor(
     private val versionProvider: VersionProvider,
     private val cacheProvider: CacheProvider
 ) : ResizeGif {
@@ -74,7 +88,7 @@ class ResizeGifInteractor constructor(
                 val newSize = result.gifSize
 
                 //Progress indicator
-                progress = (originalGifSize - newSize) / originalGifSize - targetSize
+                progress = (originalGifSize - newSize) / (originalGifSize - targetSize)
                 emit(DataState.Loading(DataState.Loading.LoadingState.Active(progress)))
 
                 if (newSize > targetSize) {

@@ -3,13 +3,13 @@ package com.shido.giffity.ui.compose.theme
 import androidx.compose.ui.graphics.Color
 
 
-val md_theme_light_primary = Color(0xFF285EA7)
+val md_theme_light_primary = Color(0xFF1B72C0)
 
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 
-val md_theme_light_primaryContainer = Color(0xFFD6E3FF)
+val md_theme_light_primaryContainer = Color(0xFFD3E4FF)
 
-val md_theme_light_onPrimaryContainer = Color(0xFF001B3D)
+val md_theme_light_onPrimaryContainer = Color(0xFF001C38)
 val md_theme_light_secondary = Color(0xFF555F71)
 val md_theme_light_onSecondary = Color(0xFFFFFFFF)
 val md_theme_light_secondaryContainer = Color(0xFFD9E3F9)

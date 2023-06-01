@@ -7,8 +7,13 @@ import com.shido.giffity.domain.CacheProvider
 import com.shido.giffity.domain.DataState
 import com.shido.giffity.domain.VersionProvider
 import com.shido.giffity.interactors.util.GifUtil.buildGifAndSaveToInternalStorage
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 interface BuildGif {
     fun execute(
@@ -20,7 +25,14 @@ data class BuildGifResult(
     val uri: Uri, val gifSize: Int
 )
 
-class BuildGifInteractor constructor(
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class BuildGifModule {
+    @Binds
+    abstract fun provideBuildGif(buildGifInteractor: BuildGifInteractor): BuildGif
+}
+
+class BuildGifInteractor @Inject constructor(
     private val versionProvider: VersionProvider, private val cacheProvider: CacheProvider
 ) : BuildGif {
     override fun execute(
@@ -48,9 +60,7 @@ class BuildGifInteractor constructor(
 
     companion object {
         const val BUILD_GIF_ERROR = "An error ocurred when gif"
-         const val NO_BITMAPS_ERROR = "You can't build a gif without bitmaps"
+        const val NO_BITMAPS_ERROR = "You can't build a gif without bitmaps"
         const val SAVE_GIF_TO_INTERNAL_STORAGE_ERROR = "Save gif error"
-
-
     }
 }
